@@ -30,7 +30,7 @@ body {
   width: 465px;
   height: 465px;
   overflow: hidden;
-  background:#f5f5f5;
+  background:#fff;
 }
 
 #ascii {
@@ -43,7 +43,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background:#f5f5f5; 
+  background:#fff; 
 }
 
 #ascii::selection {
@@ -56,7 +56,7 @@ body {
   top: 0;
   left: 0;
   display:block;
-  background:#f5f5f5;
+  background:#fff;
 }
 
 #fileReader {

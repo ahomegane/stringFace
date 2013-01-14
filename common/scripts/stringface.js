@@ -49,30 +49,31 @@
     this.isAudioApiSupport = true;
     this.isFileApiSupport = true;
 
+    //this.musicDataUrl="http://jsrun.it/static/assets/svggirl/01/svg_girl_theme.ogg";
     this.musicDataUrl="/common/objects/svg_girl_theme.ogg";
 
     this.sampleNum = -1;
     // this.samplePic = [
-    //   'http://jsrun.it/assets/j/1/R/E/j1REi.jpg',
     //   'http://jsrun.it/assets/o/D/X/x/oDXxf.jpg',
     //   'http://jsrun.it/assets/8/o/7/q/8o7qh.jpg',
+    //   'http://jsrun.it/assets/z/6/h/h/z6hhA.jpg',
     //   'http://jsrun.it/assets/i/l/U/D/ilUDY.jpg',
     //   'http://jsrun.it/assets/2/F/b/D/2FbDv.jpg',
     //   'http://jsrun.it/assets/m/F/M/R/mFMRL.jpg'
     // ];
     this.samplePic = [
-      '/common/images/sample_10.jpg',
       '/common/images/sample_02.jpg',
       '/common/images/sample_04.jpg',
+      '/common/images/sample_10.jpg',
       '/common/images/sample_03.jpg',
       '/common/images/sample_06.jpg',
       '/common/images/sample_05.jpg'
     ];
 
     //#ascii style
-    this.asciiFontSize = 10;
-    this.asciiLH = {unitStr:'', def:0.35, large:0.5, stepScore: 1900, stepOffset: 0.5};
+    this.asciiLH = {unitStr:'', def:0.35, large:0.5, stepScore: 4900, stepOffset: 0.5};
     this.asciiLS = {unitStr:'em', def:0, large:0.2, stepScore: 4900, stepOffset: 0.2};
+    this.asciiFS = {unitStr:'px', def:10, large:13, stepScore: 4900, stepOffset: 13};
 
     this.charsSize = 3;
     this.chars = [
@@ -146,7 +147,7 @@
       if(!this.isAudioApiSupport) {
         this.el.btnPlayMusic.style.backgroundColor = '#d7d7d7';
         this.el.btnPlayMusic.addEventListener('click',function(e){
-          alert(' Web Audio Api に対応しているブラウザ(Google Chrome）で閲覧いただくと、Play Music機能が使えます。)');
+          alert(' Web Audio Api に対応しているブラウザ(Google Chrome）で閲覧いただくと、Play Music機能が使えます。');
           e.preventDefault();
         },false);
       } else {
@@ -292,7 +293,7 @@
 
       self.el.ascii.innerHTML = asciiHtml;
       self.animation(self.el.ascii, 400, 'opacity', '', 0, 1, function(){
-        self.animationStep(50, self.asciiLH.def, self.asciiLH.large, self.asciiLS.def, self.asciiLS.large, 3);
+        self.animationStep(50, self.asciiLH.def, self.asciiLH.large, self.asciiLS.def, self.asciiLS.large, self.asciiFS.def, self.asciiFS.large, 3);
 
         self.isChangeImage = false;//完了
       });
@@ -415,10 +416,13 @@
       var lHDef = self.asciiLH.def,
           lHLarge = self.asciiLH.large,
           lSDef = self.asciiLS.def,
-          lSLarge = self.asciiLS.large;
+          lSLarge = self.asciiLS.large,
+          fSDef = self.asciiFS.def,
+          fSLarge = self.asciiFS.large;
 
       var lHVal = lHLarge - lHDef,
-          lSVal = lSLarge - lSDef;
+          lSVal = lSLarge - lSDef,
+          fSVal = fSLarge - fSDef;
 
       var isConfirm = this.iMusic.play(function(data){//step callback
         
@@ -431,11 +435,12 @@
           }
         }
         
-        lHLarge = lHDef + lHVal*sum/self.asciiLS.stepScore;
+        lHLarge = lHDef + lHVal*sum/self.asciiLH.stepScore;
         lSLarge = lSDef + lSVal*sum/self.asciiLS.stepScore;
+        fSLarge = fSDef + fSVal*sum/self.asciiFS.stepScore;
 
-        if(lHLarge > self.asciiLH.stepOffset && lSLarge > self.asciiLS.stepOffset) {
-          self.animationStep(50,lHDef,lHLarge,lSDef,lSLarge);
+        if(lHLarge > self.asciiLH.stepOffset && lSLarge > self.asciiLS.stepOffset && fSLarge > self.asciiFS.stepOffset) {
+          self.animationStep(50,lHDef,lHLarge,lSDef,lSLarge,fSDef,fSLarge);
         }
 
       },
@@ -459,7 +464,7 @@
       this.iMusic.stop();
     },
 
-    animationStep: function(speed, lHDef, lHLarge, lSDef, lSLarge, step, stepCount) {
+    animationStep: function(speed, lHDef, lHLarge, lSDef, lSLarge, fSDef, fSLarge, step, stepCount) {
       
       var self = this;
       var random = Math.random() * 100,
@@ -469,17 +474,24 @@
 
       self.el.ascii.style.color = self.calculateRandomXColor(0xFFFF99, 0x0000CC);
 
-      if(random >= 50) {
+      if(random >= 40) {
         //toggle lineHeight
         self.animation(self.el.ascii, speed, 'lineHeight', self.asciiLH.unitStr, lHDef, lHLarge, function(){
           self.animation(self.el.ascii, speed, 'lineHeight', self.asciiLH.unitStr, lHLarge, lHDef, function(){
             callbackCommon();
           });
         });
-      } else {
+      } else if(random >= 80) {
         //toggle letterSpacing
         self.animation(self.el.ascii, speed, 'letterSpacing', self.asciiLS.unitStr, lSDef, lSLarge, function(){
           self.animation(self.el.ascii, speed, 'letterSpacing', self.asciiLS.unitStr, lSLarge, lSDef, function(){
+            callbackCommon();
+          });
+        });
+      } else {
+        //toggle fontSize
+        self.animation(self.el.ascii, speed, 'fontSize', self.asciiFS.unitStr, fSDef, fSLarge, function(){
+          self.animation(self.el.ascii, speed, 'fontSize', 'px', fSLarge, fSDef, function(){
             callbackCommon();
           });
         });
@@ -494,7 +506,7 @@
         stepCount++;
         
         if(stepCount < step) {
-          self.animationStep(speed, lHDef, lHLarge, lSDef, lSLarge, step, stepCount);
+          self.animationStep(speed, lHDef, lHLarge, lSDef, lSLarge, fSDef, fSLarge, step, stepCount);
         }
       }
 
