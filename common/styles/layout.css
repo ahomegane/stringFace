@@ -67,12 +67,12 @@ body {
 }
 #fileReader #dropArea {
   position:absolute;
-  width:435px;
-  height:380px;
+  width:445px;
+  height:385px;
   background-color:#fff;
   border-radius: 3px;
-  top:15px;
-  left: 15px;
+  top:10px;
+  left: 10px;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   -o-border-radius: 3px;
@@ -87,11 +87,11 @@ body {
 #fileReader .lead {
   color: #ccc;
   text-align:center;
-  width: 365px;
-  height: 182px;
+  width: 385px;
+  height: 190px;
   border: dotted 8px #cacaca;
   margin: 22px;
-  padding-top: 138px;
+  padding-top: 135px;
   font-size: 30px;
   border-radius: 6px;
   -webkit-border-radius: 6px;
@@ -105,8 +105,8 @@ body {
 
 #btns {
   position: absolute;
-  bottom: 15px;
-  right: 15px;
+  bottom: 10px;
+  right: 10px;
 }
 #btns li {
   color: #fff;
@@ -123,11 +123,14 @@ body {
   -o-box-shadow: 1px 1px 3px #cacaca;
   -ms-box-shadow: 1px 1px 3px #cacaca;
 }
+#btns li::selection {
+  background: transparent;
+}
 
 #originalPic {
   position: absolute;
-  bottom: 15px;
-  left: 15px;
+  bottom: 10px;
+  left: 10px;
   width: 80px;
   overflow: hidden;
   box-shadow: 1px 1px 5px #cacaca;

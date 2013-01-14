@@ -42,12 +42,12 @@
     this.winW = winW;
     this.winH = winH;
 
-    this.fileDropIsClose = true;
-    this.musicIsPlay = false;
+    this.isFileDropOpen = false;
+    this.isMusicPlay = false;
+    this.isChangeImage = false;
 
     this.isAudioApiSupport = true;
     this.isFileApiSupport = true;
-    this.isChangeImage = false;
 
     this.musicDataUrl="/common/objects/svg_girl_theme.ogg";
 
@@ -114,16 +114,16 @@
 
       this.checkBrowserSupport();
 
-      //↓↓ btns ↓↓
-
       var self = this;
 
+      //btnChangeSample
       this.el.btnChangeSample = doc.querySelector('#btns .changeSample');
       this.el.btnChangeSample.addEventListener('click',function(e){
         self.setupSampleImage();
         e.preventDefault();
       },false);
 
+      //btnUserDrop
       this.el.btnUserDrop = doc.querySelector('#btns .userDrop');
       if(!this.isFileApiSupport) {
         this.el.btnUserDrop.style.backgroundColor = '#d7d7d7';
@@ -133,7 +133,7 @@
           alert(' File Api に対応しているブラウザ(Google Chromeなど)で閲覧いただくと、Add Image機能が使えます。');
           return;
         }
-        if(!self.fileDropIsOpen) {
+        if(!self.isFileDropOpen) {
           self.openFileDrop();
         } else {
           self.closeFileDrop();
@@ -141,6 +141,7 @@
         e.preventDefault();
       },false);
 
+      //btnPlayMusic
       this.el.btnPlayMusic = doc.querySelector('#btns .playMusic');
       if(!this.isAudioApiSupport) {
         this.el.btnPlayMusic.style.backgroundColor = '#d7d7d7';
@@ -153,7 +154,7 @@
         this.iMusic.getData(this.musicDataUrl, function(){
 
           self.el.btnPlayMusic.addEventListener('click',function(e){
-            if(!self.musicIsPlay) {
+            if(!self.isMusicPlay) {
               self.playMusic();
             } else {
               self.stopMusic();
@@ -224,7 +225,7 @@
 
     setupFileDrop: function() {
 
-      if(this.iFileDrop) {
+      if(this.iFileDrop != null) {
         this.iFileDrop.showWindow();
 
       } else {
@@ -255,17 +256,18 @@
     },
 
     openFileDrop: function() {
-      this.fileDropIsOpen = true;
+      this.isFileDropOpen = true;
       this.el.btnUserDrop.innerHTML = 'Close';
       this.el.btnUserDrop.classList.add('close');
       this.setupFileDrop();
     },
 
     closeFileDrop: function() {
-      this.fileDropIsOpen = false;
+      this.isFileDropOpen = false;
       this.el.btnUserDrop.innerHTML = 'Add Image';
       this.el.btnUserDrop.classList.remove('close');
       this.iFileDrop.hideWindow();
+      this.isChangeImage = false;
     },
 
     appendAsciiHtml: function(img, self) {
@@ -442,16 +444,16 @@
       });
 
       if(isConfirm) {
-        this.musicIsPlay = true;
+        this.isMusicPlay = true;
         this.el.btnPlayMusic.innerHTML = 'Stop Music';
         this.el.btnPlayMusic.classList.add('close');
       } else {
-        this.musicIsPlay = false;
+        this.isMusicPlay = false;
       }
     },
 
     stopMusic: function() {
-      this.musicIsPlay = false;
+      this.isMusicPlay = false;
       this.el.btnPlayMusic.innerHTML = 'Play Music';
       this.el.btnPlayMusic.classList.remove('close');
       this.iMusic.stop();
@@ -569,8 +571,6 @@
         alert(' Web Audio Api に対応しているブラウザ(Google Chrome）で閲覧ください。');
         return;
       }
-
-      console.log(this.ctx);
 
       //volume contorol
       this.ctx.gainNode = this.ctx.createGainNode();
