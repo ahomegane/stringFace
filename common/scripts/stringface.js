@@ -43,32 +43,47 @@
     this.winH = winH;
 
     this.fileDropIsClose = true;
+    this.musicIsPlay = false;
+
+    this.isAudioApiSupport = true;
+    this.isFileApiSupport = true;
+    this.isChangeImage = false;
+
+    this.musicDataUrl="/common/objects/svg_girl_theme.ogg";
 
     this.sampleNum = -1;
+    // this.samplePic = [
+    //   'http://jsrun.it/assets/j/1/R/E/j1REi.jpg',
+    //   'http://jsrun.it/assets/o/D/X/x/oDXxf.jpg',
+    //   'http://jsrun.it/assets/8/o/7/q/8o7qh.jpg',
+    //   'http://jsrun.it/assets/i/l/U/D/ilUDY.jpg',
+    //   'http://jsrun.it/assets/2/F/b/D/2FbDv.jpg',
+    //   'http://jsrun.it/assets/m/F/M/R/mFMRL.jpg'
+    // ];
     this.samplePic = [
-      '/common/images/sample_01.jpg',
+      '/common/images/sample_10.jpg',
       '/common/images/sample_02.jpg',
-      '/common/images/sample_03.jpg',
       '/common/images/sample_04.jpg',
-      '/common/images/sample_05.jpg',
+      '/common/images/sample_03.jpg',
       '/common/images/sample_06.jpg',
-      '/common/images/sample_07.jpg'
+      '/common/images/sample_05.jpg'
     ];
 
+    //#ascii style
     this.asciiFontSize = 10;
-    this.asciiLH = {def:0.35, unitStr:'', large:0.5};
-    this.asciiLS = {def:0, unitStr:'em', large:0.2};
+    this.asciiLH = {unitStr:'', def:0.35, large:0.5, stepScore: 1900, stepOffset: 0.5};
+    this.asciiLS = {unitStr:'em', def:0, large:0.2, stepScore: 4900, stepOffset: 0.2};
 
     this.charsSize = 3;
     this.chars = [
-      ['&nbsp;','&nbsp;','&nbsp;','&nbsp;','&nbsp;','&nbsp;'],//0
-      ['(','(','(','(','(','('],//1
-      [')',')',')',')',')',')'],//2
-      ['_','_','_','_','_','_'],//3
-      ['-','=','-','=','-','='],//4
-      ['`','^','`','^','`','^'],//5
-      ['|','i',':','1','I','!'],//6
-      ['r','a','a','a','+','s']//7
+      ['&nbsp;'],//0
+      ['('],//1
+      [')'],//2
+      ['_','.'],//3
+      ['-','='],//4
+      ['`','^','*'],//5
+      ['|','i','l','1','I','!'],//6
+      ['r','a','s','c','e','u']//7
     ]
     this.charsMatch = [
       [[0,0,0],[0,0,0],[0,0,0]],//0
@@ -85,18 +100,21 @@
   StringFace.prototype = {
 
     lunch: function() {
-      
+
       this.el.canvas = doc.getElementById('base');
       this.ctx = this.el.canvas.getContext('2d');
+      this.el.ascii = doc.getElementById('ascii');
+      this.el.originalPic = doc.querySelector('#originalPic');
+      this.el.loading = doc.getElementById('loading');
 
       this.el.canvas.width = this.winW;
       this.el.canvas.height = this.winH;
 
-      this.el.ascii = doc.getElementById('ascii');
-
-      this.el.originalPic = doc.querySelector('#originalPic');
-
       this.setupSampleImage();
+
+      this.checkBrowserSupport();
+
+      //↓↓ btns ↓↓
 
       var self = this;
 
@@ -107,58 +125,100 @@
       },false);
 
       this.el.btnUserDrop = doc.querySelector('#btns .userDrop');
+      if(!this.isFileApiSupport) {
+        this.el.btnUserDrop.style.backgroundColor = '#d7d7d7';
+      }
       this.el.btnUserDrop.addEventListener('click',function(e){
-        if(self.fileDropIsClose) {
-          self.fileDropIsClose = false;
-          self.el.btnUserDrop.innerHTML = '閉じる';
-          self.el.btnUserDrop.classList.add('close');
-          self.setupFileDrop();
-
+        if(!self.isFileApiSupport) {
+          alert(' File Api に対応しているブラウザ(Google Chromeなど)で閲覧いただくと、Add Image機能が使えます。');
+          return;
+        }
+        if(!self.fileDropIsOpen) {
+          self.openFileDrop();
         } else {
-          self.fileDropIsClose = true;
-          self.el.btnUserDrop.innerHTML = '画像を追加';
-          self.el.btnUserDrop.classList.remove('close');
-          self.iFileDrop.hideWindow();
-
+          self.closeFileDrop();
         }
         e.preventDefault();
       },false);
 
+      this.el.btnPlayMusic = doc.querySelector('#btns .playMusic');
+      if(!this.isAudioApiSupport) {
+        this.el.btnPlayMusic.style.backgroundColor = '#d7d7d7';
+        this.el.btnPlayMusic.addEventListener('click',function(e){
+          alert(' Web Audio Api に対応しているブラウザ(Google Chrome）で閲覧いただくと、Play Music機能が使えます。)');
+          e.preventDefault();
+        },false);
+      } else {
+        this.iMusic = new MusicAnalyser();
+        this.iMusic.getData(this.musicDataUrl, function(){
+
+          self.el.btnPlayMusic.addEventListener('click',function(e){
+            if(!self.musicIsPlay) {
+              self.playMusic();
+            } else {
+              self.stopMusic();
+            }
+            e.preventDefault();
+          },false);
+
+        });
+      }
+
+    },
+
+    checkBrowserSupport: function() {
+      try {
+        new webkitAudioContext();
+      } catch(e) {
+        this.isAudioApiSupport = false;
+      }
+      try {
+        new FileReader
+      } catch(e) {
+        this.isFileApiSupport = false;
+      }
     },
 
     setupSampleImage: function() {
-
-      //init
-      this.el.originalPic.innerHTML = '';
-      this.el.ascii.innerHTML = '';
-
-      this.sampleNum = this.sampleNum == this.samplePic.length-1 ? 0 : this.sampleNum + 1;
-
-      var img = doc.createElement('img');
-      img.src = this.samplePic[this.sampleNum];
-      
       var self = this;
-      img.addEventListener('load', function() {
 
-        var w = parseInt(img.width);
-        var h = parseInt(img.height);
+      if(!self.isChangeImage) {
+        self.isChangeImage = true;
+
+        //init
+        self.el.originalPic.innerHTML = '';
+        self.el.ascii.innerHTML = '';
+        this.el.loading.style.display = 'block';
+
+        this.sampleNum = this.sampleNum == this.samplePic.length-1 ? 0 : this.sampleNum + 1;
+
+        var img = doc.createElement('img');
+        img.src = this.samplePic[this.sampleNum];
         
-        var canvas = doc.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0);
-        
-        var imageData = ctx.getImageData(0,0,w,h);
+        var self = this;
+        img.addEventListener('load', function() {
 
-        self.el.originalPic.appendChild(img);
+          var w = parseInt(img.width);
+          var h = parseInt(img.height);
+          
+          var canvas = doc.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img,0,0);
+          
+          var imageData = ctx.getImageData(0,0,w,h);
 
-        self.imageData = imageData;
+          self.imageData = imageData;
 
-        self.appendAsciiHtml(self);
+          self.appendAsciiHtml(img, self);
 
-      },false);
+          //self.ctx.putImageData(self.imageData,0,0);
+
+        },false);
+
+      }
 
     },
 
@@ -171,36 +231,51 @@
         this.iFileDrop = new FileDrop('fileReader', 'dropArea');
         this.iFileDrop.showWindow();
 
-        var self = this;
-        this.iFileDrop.createWindow(function(imageData,img) {
+        if(!this.isChangeImage) {
+          this.isChangeImage = true;
 
-          //init
-          self.el.originalPic.innerHTML = '';
-          self.el.ascii.innerHTML = '';
+          var self = this;
+          this.iFileDrop.createWindow(function() {//callback load start
+            self.closeFileDrop();
+            //init
+            self.el.originalPic.innerHTML = '';
+            self.el.ascii.innerHTML = '';
+            self.el.loading.style.display = 'block';
 
-          self.el.originalPic.appendChild(img);
+          },
+          function(imageData,img) {//callback load complete
 
-          self.imageData = imageData;
+            self.imageData = imageData;
 
-          self.appendAsciiHtml(self);
+            self.appendAsciiHtml(img, self);
 
-          self.fileDropIsClose = true;
-          self.iFileDrop.hideWindow();
-          self.el.btnUserDrop.innerHTML = '画像を追加';
-          self.el.btnUserDrop.classList.remove('close');
-
-        });
+          });
+        }
       }
     },
 
-    appendAsciiHtml: function(self) {
+    openFileDrop: function() {
+      this.fileDropIsOpen = true;
+      this.el.btnUserDrop.innerHTML = 'Close';
+      this.el.btnUserDrop.classList.add('close');
+      this.setupFileDrop();
+    },
+
+    closeFileDrop: function() {
+      this.fileDropIsOpen = false;
+      this.el.btnUserDrop.innerHTML = 'Add Image';
+      this.el.btnUserDrop.classList.remove('close');
+      this.iFileDrop.hideWindow();
+    },
+
+    appendAsciiHtml: function(img, self) {
 
       self.iCanny = new CannyEdgeDetecotor({
         imageData: self.imageData,
         //以下省略可
         GaussianSiguma: 5,
         GaussianSize: 5,
-        hysteresisHeigh: 120,
+        hysteresisHeigh: 110,
         hysteresisLow: 10,
         isConvertGrayScale: true,
         isApplyGaussianFilter: true,
@@ -209,11 +284,17 @@
       });
 
       var asciiHtml = self.convertAscii(self.imageData);
-      self.el.ascii.innerHTML = asciiHtml;
 
-      self.animationStep(100);
-    
-      //self.ctx.putImageData(self.imageData,0,0);
+      self.el.originalPic.appendChild(img);
+      self.animation(self.el.originalPic, 400, 'opacity', '', 0, 1);
+
+      self.el.ascii.innerHTML = asciiHtml;
+      self.animation(self.el.ascii, 400, 'opacity', '', 0, 1, function(){
+        self.animationStep(50, self.asciiLH.def, self.asciiLH.large, self.asciiLS.def, self.asciiLS.large, 3);
+
+        self.isChangeImage = false;//完了
+      });
+      self.el.loading.style.display = 'none';
 
     },
 
@@ -326,26 +407,79 @@
       return html;
     },
 
-    animationStep: function(stepMax, stepCount) {
+    playMusic: function() {
+      var self = this;
+
+      var lHDef = self.asciiLH.def,
+          lHLarge = self.asciiLH.large,
+          lSDef = self.asciiLS.def,
+          lSLarge = self.asciiLS.large;
+
+      var lHVal = lHLarge - lHDef,
+          lSVal = lSLarge - lSDef;
+
+      var isConfirm = this.iMusic.play(function(data){//step callback
+        
+        var sum = 0;
+
+        //ビートをとるなら700-800がちょうど良い
+        for (var i=700; i<800; i++){
+          if(data[i] < 180) {//180以上をカットした方がより良い
+            sum += data[i];
+          }
+        }
+        
+        lHLarge = lHDef + lHVal*sum/self.asciiLS.stepScore;
+        lSLarge = lSDef + lSVal*sum/self.asciiLS.stepScore;
+
+        if(lHLarge > self.asciiLH.stepOffset && lSLarge > self.asciiLS.stepOffset) {
+          self.animationStep(50,lHDef,lHLarge,lSDef,lSLarge);
+        }
+
+      },
+      function(){//ended callback
+        self.stopMusic();
+      });
+
+      if(isConfirm) {
+        this.musicIsPlay = true;
+        this.el.btnPlayMusic.innerHTML = 'Stop Music';
+        this.el.btnPlayMusic.classList.add('close');
+      } else {
+        this.musicIsPlay = false;
+      }
+    },
+
+    stopMusic: function() {
+      this.musicIsPlay = false;
+      this.el.btnPlayMusic.innerHTML = 'Play Music';
+      this.el.btnPlayMusic.classList.remove('close');
+      this.iMusic.stop();
+    },
+
+    animationStep: function(speed, lHDef, lHLarge, lSDef, lSLarge, step, stepCount) {
       
       var self = this;
       var random = Math.random() * 100,
           stepCount = stepCount || 0,
-          stepMax = 5;
+          step = step || 1,
+          speed = speed || 50;
 
       self.el.ascii.style.color = self.calculateRandomXColor(0xFFFF99, 0x0000CC);
 
       if(random >= 50) {
         //toggle lineHeight
-        self.animation(50, 'lineHeight', self.asciiLH.unitStr, self.asciiLH.def, self.asciiLH.large, function(){
-          self.animation(50, 'lineHeight', self.asciiLH.unitStr, self.asciiLH.large, self.asciiLH.def);
-          callbackCommon();
+        self.animation(self.el.ascii, speed, 'lineHeight', self.asciiLH.unitStr, lHDef, lHLarge, function(){
+          self.animation(self.el.ascii, speed, 'lineHeight', self.asciiLH.unitStr, lHLarge, lHDef, function(){
+            callbackCommon();
+          });
         });
       } else {
         //toggle letterSpacing
-        self.animation(50, 'letterSpacing', self.asciiLS.unitStr, self.asciiLS.def, self.asciiLS.large, function(){
-          self.animation(50, 'letterSpacing', self.asciiLS.unitStr, self.asciiLS.large, self.asciiLS.def);
-          callbackCommon();
+        self.animation(self.el.ascii, speed, 'letterSpacing', self.asciiLS.unitStr, lSDef, lSLarge, function(){
+          self.animation(self.el.ascii, speed, 'letterSpacing', self.asciiLS.unitStr, lSLarge, lSDef, function(){
+            callbackCommon();
+          });
         });
       }
 
@@ -357,14 +491,14 @@
 
         stepCount++;
         
-        if(stepCount < stepMax) {
-          self.animationStep(stepMax, stepCount);
+        if(stepCount < step) {
+          self.animationStep(speed, lHDef, lHLarge, lSDef, lSLarge, step, stepCount);
         }
       }
 
     },
 
-    animation: function(speed, prop, propUnitStr, startVal, endVal, callback) {
+    animation: function(el, speed, prop, propUnitStr, startVal, endVal, callback) {
       var self = this;
       
       var start = +(new Date),
@@ -377,10 +511,10 @@
 
         var curVal = startVal + addVal * progress/end;
 
-        self.el.ascii.style[prop] = curVal + propUnitStr;
+        el.style[prop] = curVal + propUnitStr;
 
         if(progress > end) {
-          self.el.ascii.style[prop] = endVal + propUnitStr;
+          el.style[prop] = endVal + propUnitStr;
           if(typeof callback == 'function') callback();
         } else {
           requestAnimationFrame(step);
@@ -400,16 +534,181 @@
       var rv = '000000' + (Math.floor(Math.random() * (maxVal-minVal)) + minVal).toString(16);
       rv = '#' + rv.slice(-6);
       return rv;
+    }
+
+  }
+
+  /**
+  * MusicAnalyser Class
+  * http://d.hatena.ne.jp/weathercook/20111121/1321892542
+  */
+  var MusicAnalyser = function() {
+    
+    this.dataUrl;
+    this.ctx;
+
+    this.volume = 0.5;/* 0 〜 1 */
+
+    this.isPlay = false;
+
+    this.confirmPlay = false;
+
+    this.el = {};
+
+    this.playbackRate = 1;
+
+    return this.init();
+  }
+  MusicAnalyser.prototype = {
+
+    init: function(callback) {
+
+      try {
+        this.ctx = new webkitAudioContext();
+      } catch(e) {
+        alert(' Web Audio Api に対応しているブラウザ(Google Chrome）で閲覧ください。');
+        return;
+      }
+
+      console.log(this.ctx);
+
+      //volume contorol
+      this.ctx.gainNode = this.ctx.createGainNode();
+      this.ctx.gainNode.gain.value = this.volume;
+
+      //analser
+      this.ctx.analyser = this.ctx.createAnalyser();
+      this.timeDomainData = new Uint8Array(this.ctx.analyser.frequencyBinCount);
+
+      this.ctx.filter = this.ctx.createBiquadFilter();
+
     },
 
-    playMusic: function() {
+    getData: function(dataUrl, callback) {
 
-      this.el.audio = doc.createElement('audio');
+      this.dataUrl = dataUrl;
 
+      //get data
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', this.dataUrl, true);
+      xhr.responseType = 'arraybuffer';
+      
+      var self = this;
+      xhr.onload = function() {
+        self.ctx.decodeAudioData(xhr.response, function(buffer){
+          self.buffer = buffer;//data(ctxからsource生成→destinationにconnectで出力)
+          if(typeof callback == 'function') callback();
+        });
+      }
+      xhr.send();
+
+    },
+
+    createSource: function() {
+      
+      var src = this.ctx.createBufferSource();//sourceのオブジェクト(noteOn/Offするたびに使い捨て)
+      
+      src.buffer =  this.buffer;
+
+      src.playbackRate.value = this.playbackRate;
+      
+      // this.ctx.filter.type = 5; //peaking
+      // this.ctx.filter.frequency.value = 50;
+
+      //destinationNode : 出力
+      //src.connect(this.ctx.filter);
+      src.connect(this.ctx.gainNode);
+      this.ctx.gainNode.connect(this.ctx.analyser);
+      this.ctx.analyser.connect(this.ctx.destination);
+
+      return src;
+    },
+
+    play: function(callback, callbackEnded) {
+      
+      if(this.confirmPlay == false) {
+        this.confirmPlay = win.confirm('音楽を再生します。');
+      }
+
+      if(this.confirmPlay) {
+        this.isPlay = true;
+
+        this.ctx.src = this.createSource();   
+        var endTime = this.ctx.currentTime + (this.ctx.src.buffer.duration/this.playbackRate);    
+        //play start!
+        this.ctx.src.noteOn(this.ctx.currentTime);
+
+        var self = this;
+        (function step(){
+          
+          //timeDomainData
+          //self.ctx.analyser.getByteTimeDomainData(self.timeDomainData);//this.timeDomainDataを更新
+          //memo:timeDomainData用係数
+          //var k = (1/100)*(1/self.iMusic.volume);
+          //dataの値を -1〜1 に標準化する係数。
+          //dataは-100-100を基準にしているため、1/100
+          //volumeにより割り算されているため、volumeのmax1で割った値を描ける
+
+          self.ctx.analyser.getByteFrequencyData(self.timeDomainData);
+
+          if(self.ctx.currentTime > endTime) {
+            callbackEnded();
+          } else {
+            if(typeof callback == 'function') callback(self.timeDomainData);
+          }
+          
+          //for test
+          self.drawWave(self.timeDomainData);
+          
+          if(self.isPlay) {
+            requestAnimationFrame(step);
+          }
+        
+        })();
+
+        return true;
+      } else {
+        alert('キャンセルされました。');
+        return false;
+      }
+
+    },
+
+    //for test
+    drawWave :function(data) {
+
+      this.el.canvas = this.el.canvas || doc.getElementById('music');
+      this.cvctx = this.cvctx || this.el.canvas.getContext('2d');
+
+      var canvas = this.el.canvas;
+      var ctx = this.cvctx;
+      
+      ctx.beginPath();
+      ctx.fillStyle = "#555";
+      ctx.rect(0,0,canvas.width,canvas.height);
+      ctx.fill();
+      var value;
+      ctx.beginPath();
+      ctx.moveTo(0,-999);
+      for (var i=0; i<data.length; i++){
+        value = data[i]-128+canvas.height/2; //2の8乗 = 128。8ビットデータのため
+        ctx.lineTo(i,value);
+      }
+      ctx.moveTo(0,999);
+      ctx.closePath();
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
+
+    },
+
+    stop: function() {
+      this.isPlay = false;
+      this.ctx.src.noteOff(this.ctx.currentTime);
 
     }
 
   }
+
 
   /**
   * FileDrop Class
@@ -428,10 +727,7 @@
   };
   FileDrop.prototype = {
     
-    createWindow : function(callback) {    
-      
-      this.el.dropArea.style.left = (this.winW - this.el.dropArea.offsetWidth)/2 + 'px';
-      this.el.dropArea.style.top = (this.winH - this.el.dropArea.offsetHeight)/2 + 'px';
+    createWindow : function(callbackLoadStart, callbackLoadComplete) {
 
       this.el.dropArea.addEventListener('dragover',function(e) {
         e.preventDefault();
@@ -440,22 +736,24 @@
       var self = this;
       this.el.dropArea.addEventListener('drop',function(e) {
         e.preventDefault();
-        self.droped(e, callback, self);
+        self.droped(e, callbackLoadStart, callbackLoadComplete, self);
       },false);
       
     },
     
-    droped: function(e,callback,self) {
-      
+    droped: function(e,callbackLoadStart, callbackLoadComplete,self) {
+
+      callbackLoadStart();
+
       try {
         var file = e.dataTransfer.files[0];
         self.reader = new FileReader();
       } catch(e) {
-        alert('fileApiに対応したブラウザ(chrome,firefoxなど)で閲覧ください');
+        alert(' File Api に対応しているブラウザ(Google Chromeなど)で閲覧ください。');
       }
       
       if(!/^image/.test(file.type)) {
-        alert('画像ファイルをドロップしてください');
+        alert('画像ファイルをドロップしてください。');
       }
       
       self.reader.addEventListener('load', function(e) {
@@ -476,7 +774,7 @@
           
           var imageData = ctx.getImageData(0,0,w,h);
           
-          if(typeof callback == 'function') callback(imageData,img);
+          if(typeof callbackLoadComplete == 'function') callbackLoadComplete(imageData,img);
 
         },false);
 
@@ -1065,6 +1363,9 @@ if (!window.requestAnimationFrame) {
            window.oRequestAnimationFrame ||
            function(f) { return window.setTimeout(f, 1000 / 60); };
   }());
+}
+
+if(!window.cancelRequestAnimationFrame) {
   window.cancelRequestAnimationFrame = (function() {
     return window.cancelRequestAnimationFrame ||
            window.webkitCancelRequestAnimationFrame ||
